@@ -1,0 +1,13 @@
+# ห้ามนำข้อมูลผู้ป่วย รหัสผ่าน หรือ service_role key ขึ้น GitHub
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+*.zip
+.env
+.env.*
+*.local.js
+secrets*
+node_modules/
+.DS_Store
+Thumbs.db

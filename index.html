@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#9E76B4">
+<title>ทะเบียนมะเร็ง · Cancer Registry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== หน้าเข้าสู่ระบบ (โหมดใช้งานจริง) ===== -->
+<section id="loginScreen" class="login-screen" hidden>
+  <div class="login-art">
+    <div class="brand brand-light"><span class="logo" aria-hidden="true"></span><div><b>ทะเบียนมะเร็ง</b><small>CANCER REGISTRY</small></div></div>
+    <h1>ระบบบันทึกและติดตามงาน<br>ทะเบียนมะเร็ง</h1>
+    <p>ทุกงานเป็นระบบ ทุกข้อมูลอยู่ในที่เดียว บันทึก แนบเอกสาร และสรุปผลงานของทีมได้จากทุกอุปกรณ์</p>
+    <ul class="login-points"><li>ระบุผู้บันทึกอัตโนมัติจากบัญชี</li><li>เอกสารแนบเก็บแบบส่วนตัว เปิดด้วยลิงก์ชั่วคราว</li><li>แก้ไขได้เฉพาะงานของตนเอง</li></ul>
+  </div>
+  <form id="authForm" class="login-card" novalidate>
+    <h2>เข้าสู่ระบบ</h2>
+    <p class="muted">ใช้บัญชีส่วนตัวที่ผู้ดูแลระบบสร้างให้</p>
+    <label>อีเมล<input name="email" type="email" required autocomplete="username" placeholder="name@example.com"></label>
+    <label>รหัสผ่าน<input name="password" type="password" required autocomplete="current-password" placeholder="••••••••"></label>
+    <p id="authError" class="form-error" role="alert"></p>
+    <button class="btn primary block" id="loginSubmit">เข้าสู่ระบบ</button>
+    <p class="muted tiny">ลืมรหัสผ่านหรือยังไม่มีบัญชี กรุณาติดต่อผู้ดูแลระบบ</p>
+  </form>
+</section>
+
+<!-- ===== แอปหลัก ===== -->
+<div id="app" class="app" hidden>
+  <aside id="sidebar" class="sidebar">
+    <div class="brand"><span class="logo" aria-hidden="true"></span><div><b>ทะเบียนมะเร็ง</b><small>CANCER REGISTRY</small></div></div>
+    <p class="nav-label">พื้นที่ทำงาน</p>
+    <nav id="mainNav">
+      <button data-view="dashboard" class="nav-item active"><span class="ico" data-icon="grid"></span>ภาพรวมการทำงาน</button>
+      <button data-view="records" class="nav-item"><span class="ico" data-icon="list"></span>บันทึกงานทั้งหมด<span class="count" id="navCountRecords"></span></button>
+      <button data-view="documents" class="nav-item"><span class="ico" data-icon="file"></span>คลังเอกสาร<span class="count" id="navCountDocs"></span></button>
+    </nav>
+    <p class="nav-label">หมวดงาน</p>
+    <nav id="categoryNav" class="category-nav"></nav>
+    <div class="user-card">
+      <span class="avatar" id="avatar">CR</span>
+      <div class="user-meta"><b id="identity">-</b><small id="identitySub">ทะเบียนมะเร็ง</small></div>
+      <button id="logout" class="icon-btn" title="ออกจากระบบ" aria-label="ออกจากระบบ" hidden><span class="ico" data-icon="logout"></span></button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main>
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="เปิดเมนู"><span class="ico" data-icon="menu"></span></button>
+      <span class="crumb">ทะเบียนมะเร็ง <span class="muted">/ <span id="crumbPage">ภาพรวมการทำงาน</span></span></span>
+      <div class="top-actions">
+        <span id="modeBadge" class="mode-badge"></span>
+        <button class="btn primary" id="add"><span class="ico" data-icon="plus"></span><span class="hide-sm">บันทึกงานใหม่</span></button>
+      </div>
+    </header>
+
+    <div class="content">
+      <div class="heading">
+        <div>
+          <p class="eyebrow" id="eyebrow">WORKSPACE OVERVIEW</p>
+          <h1 id="pageTitle">ภาพรวมการทำงาน</h1>
+          <p class="muted" id="pageSub">ทุกงานเป็นระบบ ทุกข้อมูลอยู่ในที่เดียว</p>
+        </div>
+      </div>
+
+      <div id="notice" class="notice" hidden></div>
+
+      <div class="filters card">
+        <div class="filter-row">
+          <label class="field-sm">ตั้งแต่<input type="date" id="from"></label>
+          <label class="field-sm">ถึง<input type="date" id="to"></label>
+          <label class="field-sm">หมวดงาน<select id="categoryFilter"></select></label>
+          <label class="field-sm">สถานะ<select id="statusFilter"></select></label>
+          <label class="field-sm grow">ค้นหา<span class="search"><span class="ico" data-icon="search"></span><input id="search" type="search" placeholder="เรื่อง, HN, ผู้บันทึก, หมายเหตุ"></span></label>
+        </div>
+        <div class="filter-row filter-actions">
+          <div class="quick" id="quickRange">
+            <button data-range="month">เดือนนี้</button><button data-range="quarter">3 เดือน</button><button data-range="year">ปีนี้</button><button data-range="fiscal">ปีงบประมาณ</button>
+          </div>
+          <div class="spacer"></div>
+          <button class="btn ghost" id="clearFilters">ล้างตัวกรอง</button>
+          <button class="btn" id="export"><span class="ico" data-icon="download"></span>ส่งออก CSV</button>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <section id="dashboard">
+        <div id="stats" class="stats"></div>
+        <div class="charts">
+          <article class="card">
+            <div class="card-head"><div><h2>ปริมาณงานรายเดือน</h2><p class="muted small">จำนวนรายการบันทึกงานตามวันที่ปฏิบัติงาน (6 เดือนล่าสุดในช่วงที่เลือก)</p></div></div>
+            <div id="monthly" class="monthly"></div>
+          </article>
+          <article class="card">
+            <div class="card-head"><div><h2>สัดส่วนงานแต่ละหมวด</h2><p class="muted small">นับเป็นรายการ ไม่ใช่ผู้ป่วยไม่ซ้ำ</p></div></div>
+            <div class="donut-wrap"><div id="donut" class="donut"><div><b id="donutTotal">0</b><small>รายการ</small></div></div><ul id="legend" class="legend"></ul></div>
+          </article>
+        </div>
+        <div class="section-head"><h2>เลือกหมวดเพื่อเริ่มบันทึก</h2><span class="muted small">กดการ์ดเพื่อบันทึกงานในหมวดนั้นทันที</span></div>
+        <div id="categories" class="categories"></div>
+      </section>
+
+      <!-- Table -->
+      <article id="tableCard" class="card table-card">
+        <div class="card-head">
+          <div><h2 id="tableTitle">รายการล่าสุด</h2><span id="total" class="muted small"></span></div>
+          <button class="btn ghost" id="seeAll">ดูทั้งหมด →</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th data-sort="work_date">วันที่</th>
+              <th data-sort="title">เรื่อง / รายการ</th>
+              <th data-sort="category">หมวดงาน</th>
+              <th data-sort="author_name">ผู้บันทึก</th>
+              <th data-sort="status">สถานะ</th>
+              <th class="center">เอกสาร</th>
+            </tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="pager"></div>
+      </article>
+
+      <!-- Documents -->
+      <section id="documents" class="docs" hidden></section>
+
+      <footer>ระบบบันทึกและติดตามงานทะเบียนมะเร็ง · Cancer Registry Workspace</footer>
+    </div>
+  </main>
+</div>
+
+<!-- ===== รายละเอียดงาน ===== -->
+<dialog id="detail" class="modal">
+  <div class="modal-head">
+    <div><span id="detailCat" class="chip"></span><h2 id="detailTitle"></h2></div>
+    <button type="button" class="icon-btn" data-close="detail" aria-label="ปิด"><span class="ico" data-icon="x"></span></button>
+  </div>
+  <div id="detailBody" class="modal-body"></div>
+  <div class="modal-foot">
+    <span id="detailHint" class="muted small"></span>
+    <div class="spacer"></div>
+    <button type="button" class="btn" data-close="detail">ปิด</button>
+    <button type="button" class="btn primary" id="detailEdit"><span class="ico" data-icon="edit"></span>แก้ไข</button>
+  </div>
+</dialog>
+
+<!-- ===== ฟอร์มบันทึก / แก้ไข ===== -->
+<dialog id="editor" class="modal modal-lg">
+  <form id="recordForm" novalidate>
+    <div class="modal-head">
+      <div><p class="eyebrow">WORK RECORD</p><h2 id="formTitle">บันทึกงานใหม่</h2></div>
+      <button type="button" class="icon-btn" data-close="editor" aria-label="ปิด"><span class="ico" data-icon="x"></span></button>
+    </div>
+    <div class="modal-body">
+      <p class="label">หมวดงาน</p>
+      <div id="catPicker" class="cat-picker" role="radiogroup" aria-label="หมวดงาน"></div>
+      <div class="form-grid">
+        <label>วันที่ปฏิบัติงาน <em>*</em><input id="recordDate" type="date" required></label>
+        <label>สถานะ<select id="status"></select></label>
+      </div>
+      <label>เรื่อง / รายการ <em>*</em><input id="title" maxlength="500" required placeholder="สรุปงานสั้น ๆ"></label>
+      <fieldset class="dyn"><legend id="dynLegend">ข้อมูลเฉพาะหมวด</legend><div id="dynamicFields" class="form-grid"></div></fieldset>
+      <label>หมายเหตุ<textarea id="notes" rows="3" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea></label>
+      <p class="label">เอกสารแนบ</p>
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="attachment" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+        <span class="ico big" data-icon="upload"></span>
+        <span id="dropText"><b>คลิกเพื่อเลือกไฟล์</b> หรือลากไฟล์มาวาง<br><small class="muted">PDF, JPG, PNG ไม่เกิน 10 MB</small></span>
+      </label>
+      <p class="muted small" id="authorHint"></p>
+      <p id="formError" class="form-error" role="alert"></p>
+    </div>
+    <div class="modal-foot">
+      <div class="spacer"></div>
+      <button type="button" class="btn" data-close="editor">ยกเลิก</button>
+      <button class="btn primary" id="save"><span class="ico" data-icon="check"></span>บันทึกข้อมูล</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="config.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
