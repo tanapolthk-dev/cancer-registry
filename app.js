@@ -594,6 +594,8 @@ $('#googleLogin').onclick = async () => {
     history.replaceState(null, '', location.pathname);
   }
 }
+// ล้าง '#' ที่ค้างหลังกลับจาก Google
+if (LIVE) window.addEventListener('load', () => setTimeout(() => { if (location.hash === '' && location.href.endsWith('#')) history.replaceState(null, '', location.pathname + location.search); }, 1500));
 
 /* ---------- start ---------- */
 hydrateIcons();
