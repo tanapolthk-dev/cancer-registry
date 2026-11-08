@@ -582,6 +582,19 @@ $('#googleLogin').onclick = async () => {
   catch (e) { btn.disabled = false; $('#authError').textContent = /not enabled|provider/i.test(e.message) ? 'ยังไม่ได้เปิดการเข้าสู่ระบบด้วย Google ใน Supabase' : 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่'; }
 };
 
+// แสดงข้อผิดพลาดที่ส่งกลับมาจากการเข้าสู่ระบบด้วย Google (เช่น ?error=server_error&error_description=...)
+{
+  const p = new URLSearchParams(location.search + '&' + location.hash.replace(/^#/, ''));
+  if (p.get('error')) {
+    const d = p.get('error_description') || p.get('error');
+    $('#authError').textContent = /exchange external code/i.test(d)
+      ? 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ: การตั้งค่า Google ในระบบไม่ถูกต้อง กรุณาแจ้งผู้ดูแลระบบ'
+      : /signups? not allowed/i.test(d) ? 'บัญชีนี้ยังไม่ได้รับอนุญาตให้เข้าใช้งาน กรุณาติดต่อผู้ดูแลระบบ'
+      : 'เข้าสู่ระบบไม่สำเร็จ: ' + d;
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
 /* ---------- start ---------- */
 hydrateIcons();
 try { await store.init(); }
