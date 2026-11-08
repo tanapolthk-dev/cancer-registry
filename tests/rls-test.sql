@@ -1,7 +1,6 @@
 -- ทดสอบสิทธิ์ (RLS) แบบหลายบัญชีใน Supabase SQL Editor โดยไม่ต้องใช้รหัสผ่าน
--- 1) สร้างบัญชีทดสอบ 3 บัญชีใน Auth > Users (A และ B เป็นสมาชิกทีม, C ไม่ใช่สมาชิก)
--- 2) แก้อีเมล 3 บรรทัดด้านล่าง แล้วกด Run ทั้งไฟล์
--- ทุกอย่างอยู่ใน transaction และ ROLLBACK ตอนท้าย จึงไม่ทิ้งข้อมูลทดสอบไว้ในฐานข้อมูล
+-- กด Run ทั้งไฟล์ได้เลย: สคริปต์สร้างผู้ใช้ทดสอบ A, B (สมาชิก) และ C (ไม่ใช่สมาชิก) ชั่วคราวภายใน transaction
+-- แล้ว ROLLBACK ตอนท้าย จึงไม่มีบัญชีหรือข้อมูลทดสอบหลงเหลือในฐานข้อมูล (บัญชีทดสอบไม่มีรหัสผ่าน เข้าสู่ระบบไม่ได้)
 -- ผลลัพธ์ดูได้ในแท็บ Results (ตาราง rls_results) ทุกแถวต้องเป็น PASS
 
 begin;
@@ -10,21 +9,17 @@ grant all on rls_results to authenticated, anon;
 
 do $$
 declare
-  email_a text := 'test-a@example.com';   -- สมาชิกทีม A
-  email_b text := 'test-b@example.com';   -- สมาชิกทีม B
-  email_c text := 'test-c@example.com';   -- ไม่ใช่สมาชิกทีม
-  ua uuid; ub uuid; uc uuid; rec uuid; n int; s int := 0;
+  ua uuid := gen_random_uuid(); ub uuid := gen_random_uuid(); uc uuid := gen_random_uuid();
+  rec uuid; n int; s int := 0;
   procedure_ok boolean;
 begin
-  select id into ua from auth.users where email = email_a;
-  select id into ub from auth.users where email = email_b;
-  select id into uc from auth.users where email = email_c;
-  if ua is null or ub is null or uc is null then raise exception 'ไม่พบบัญชีทดสอบ ตรวจอีเมลด้านบน'; end if;
-
-  -- ให้ A และ B เป็นสมาชิกชั่วคราวภายใน transaction นี้ (C ไม่ใช่)
-  insert into public.team_members values (ua, 'ทดสอบ A') on conflict (user_id) do nothing;
-  insert into public.team_members values (ub, 'ทดสอบ B') on conflict (user_id) do nothing;
-  delete from public.team_members where user_id = uc;
+  -- ผู้ใช้ทดสอบชั่วคราว (ถูก rollback ตอนท้าย)
+  insert into auth.users(id, email, aud, role) values
+    (ua, 'rls-test-a@example.invalid', 'authenticated', 'authenticated'),
+    (ub, 'rls-test-b@example.invalid', 'authenticated', 'authenticated'),
+    (uc, 'rls-test-c@example.invalid', 'authenticated', 'authenticated');
+  -- A และ B เป็นสมาชิกทีม, C ไม่ใช่
+  insert into public.team_members values (ua, 'ทดสอบ A'), (ub, 'ทดสอบ B');
 
   -- ===== A สร้างงาน =====
   perform set_config('request.jwt.claims', json_build_object('sub', ua, 'role', 'authenticated')::text, true);
