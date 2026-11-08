@@ -131,7 +131,7 @@ const DemoStore = {
 const LiveStore = {
   client: null,
   async init() {
-    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm');
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm');
     this.client = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
     const { data, error } = await this.client.auth.getSession();
     if (error) throw error;
