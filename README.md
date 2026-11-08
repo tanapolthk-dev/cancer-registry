@@ -42,10 +42,25 @@ python -m http.server 8080
 7. ขึ้น GitHub: push ไฟล์ทั้งหมดไป branch `main` แล้ว Settings > Pages > Source: **GitHub Actions**
    workflow `.github/workflows/pages.yml` จะเผยแพร่อัตโนมัติทุกครั้งที่ push
 
+## เปิดการเข้าสู่ระบบด้วย Google (ไม่บังคับ)
+
+ปุ่ม "เข้าสู่ระบบด้วย Google" ซ่อนอยู่จนกว่าจะตั้งค่า `googleLogin: true` ใน `config.js`
+
+1. Google Cloud Console (https://console.cloud.google.com) > สร้าง project ใหม่
+2. APIs & Services > OAuth consent screen: User type **External**, ชื่อแอป "ทะเบียนมะเร็ง", scopes เฉพาะ email/profile/openid แล้วกด Publish app
+3. APIs & Services > Credentials > Create credentials > **OAuth client ID** > Web application
+   - Authorized JavaScript origins: `https://tanapolthk-dev.github.io`
+   - Authorized redirect URIs: `https://nzwowvkstrdfmrsjjwav.supabase.co/auth/v1/callback`
+4. Supabase > Authentication > Sign In / Providers > **Google**: เปิด แล้วใส่ Client ID และ Client Secret (Secret ใส่ใน Supabase เท่านั้น ห้ามใส่ใน GitHub)
+5. Supabase > Authentication > URL Configuration > Redirect URLs: เพิ่ม `https://tanapolthk-dev.github.io/cancer-registry/`
+6. Sign In / Providers > เปิด **Allow new users to sign up** (ผู้ที่ไม่อยู่ใน `team_members` จะเข้าสู่ระบบได้ แต่ไม่เห็นและบันทึกข้อมูลไม่ได้)
+7. ตั้ง `googleLogin: true` ใน `config.js` แล้ว push
+8. ให้เจ้าหน้าที่กดเข้าสู่ระบบด้วย Google หนึ่งครั้ง แล้วเพิ่มเป็นสมาชิกด้วย SQL ในหัวข้อด้านบน (ใช้อีเมล Google ของแต่ละคน)
+
 ## ทดสอบสิทธิ์หลายบัญชี
 
-**ฐานข้อมูล (อัตโนมัติ ไม่ต้องใช้รหัสผ่าน):** สร้างบัญชีทดสอบ A, B, C ใน Auth แก้อีเมลบนหัวไฟล์ `tests/rls-test.sql`
-แล้วรันใน SQL Editor — ทุกขั้นอยู่ใน transaction และ rollback ไม่ทิ้งข้อมูล ผลต้องเป็น PASS ทั้งหมด:
+**ฐานข้อมูล (อัตโนมัติ ไม่ต้องใช้รหัสผ่าน):** รัน `tests/rls-test.sql` ทั้งไฟล์ใน SQL Editor (กด "Run without RLS" เมื่อมีคำเตือน)
+สคริปต์สร้างผู้ใช้ทดสอบชั่วคราวและ rollback ทั้งหมด ไม่ทิ้งข้อมูล ผลต้องเป็น PASS ทั้งหมด (ทดสอบล่าสุด 8 พ.ย. 2569: ผ่าน 12/12):
 
 - A สร้างงานได้ และผู้สร้าง/ชื่อผู้บันทึกถูกบังคับเป็น A แม้ส่งค่าปลอม
 - A อ้างไฟล์ในโฟลเดอร์ของ B ไม่ได้

@@ -262,6 +262,11 @@ footer{text-align:center;font-size:11px;color:var(--muted);padding:20px}
 .login-points li::before{content:'✓';width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;font-size:12px}
 .login-card{align-self:center;justify-self:center;width:min(400px,calc(100% - 32px));background:var(--white);border:1px solid var(--line);border-radius:20px;padding:34px;box-shadow:var(--shadow)}
 .login-card h2{font-size:24px;margin-bottom:4px}
+.btn.google{justify-content:center;gap:12px;padding:12px;background:#fff;color:#3c4043;border:1px solid #dadce0;font-weight:500;box-shadow:0 1px 2px rgba(60,64,67,.08)}
+.btn.google:hover{background:#f8f9fa;border-color:#c9cdd2;box-shadow:0 2px 8px rgba(60,64,67,.15)}
+.g-logo{width:20px;height:20px;flex:none}
+.divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:20px 0 16px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--line)}
 .login-card .muted{margin-bottom:20px}
 
 /* ---------- responsive ---------- */

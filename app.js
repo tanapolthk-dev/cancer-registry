@@ -141,6 +141,13 @@ const LiveStore = {
       setTimeout(() => setSession(s?.user || null), 0);
     });
   },
+  async signInGoogle() {
+    const { error } = await this.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.origin + location.pathname, queryParams: { prompt: 'select_account' } }
+    });
+    if (error) throw error;
+  },
   async signIn(email, password) { const { error } = await this.client.auth.signInWithPassword({ email, password }); if (error) throw error; },
   async signOut() { const { error } = await this.client.auth.signOut(); if (error) throw error; },
   async member(uid) {
@@ -205,7 +212,7 @@ async function setSession(user) {
 async function reload() {
   if (LIVE && !state.isMember) {
     state.records = []; render();
-    showNotice('บัญชีนี้ยังไม่ได้รับสิทธิ์ในทีม กรุณาติดต่อผู้ดูแลระบบให้เพิ่มในรายชื่อสมาชิก (team_members)', 'warn');
+    showNotice(`บัญชี ${state.user?.email || ''} ยังไม่ได้รับสิทธิ์ในทีม กรุณาแจ้งอีเมลนี้กับผู้ดูแลระบบเพื่อเพิ่มเป็นสมาชิก แล้วโหลดหน้านี้ใหม่`, 'warn');
     return;
   }
   try {
@@ -564,6 +571,16 @@ $('#authForm').addEventListener('submit', async e => {
   catch (err) { $('#authError').textContent = /Failed to fetch/i.test(err.message) ? 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้' : 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน'; }
   finally { btn.disabled = false; btn.textContent = 'เข้าสู่ระบบ'; }
 });
+
+if (CONFIG.googleLogin) {
+  $('#googleLogin').hidden = false; $('#loginDivider').hidden = false;
+  $('#loginHint').textContent = 'ใช้บัญชี Google ของคุณ หรืออีเมลที่ผู้ดูแลระบบสร้างให้';
+}
+$('#googleLogin').onclick = async () => {
+  const btn = $('#googleLogin'); btn.disabled = true; $('#authError').textContent = '';
+  try { await LiveStore.signInGoogle(); }
+  catch (e) { btn.disabled = false; $('#authError').textContent = /not enabled|provider/i.test(e.message) ? 'ยังไม่ได้เปิดการเข้าสู่ระบบด้วย Google ใน Supabase' : 'เข้าสู่ระบบด้วย Google ไม่สำเร็จ กรุณาลองใหม่'; }
+};
 
 /* ---------- start ---------- */
 hydrateIcons();
