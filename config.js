@@ -5,5 +5,5 @@ window.APP_CONFIG = {
   supabaseUrl: 'https://nzwowvkstrdfmrsjjwav.supabase.co',
   supabaseAnonKey: 'sb_publishable_egfVhSb1G0pBYiGRMjj9Ug_-dsXMU_E',
   // เปลี่ยนเป็น true หลังเปิด Google provider ใน Supabase แล้ว (ดู README)
-  googleLogin: false
+  googleLogin: true
 };
