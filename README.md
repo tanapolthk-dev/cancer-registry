@@ -29,12 +29,23 @@ python -m http.server 8080
 1. สร้าง Supabase project (แนะนำ region Singapore) แล้วเปิด SQL Editor รัน `schema.sql` หนึ่งครั้ง
 2. Authentication > Sign In / Providers: **ปิด Allow new users to sign up** (ปิดสมัครสาธารณะ)
 3. Authentication > Users > Add user: สร้างบัญชีเจ้าหน้าที่ (ติ๊ก Auto Confirm) แจ้งรหัสผ่านผ่านช่องทางส่วนตัว
-4. เพิ่มแต่ละบัญชีเป็นสมาชิกทีม:
+4. เพิ่มเจ้าหน้าที่ (SQL Editor) — **วิธีแนะนำ: อนุมัติล่วงหน้าด้วยอีเมล** เจ้าหน้าที่จะเป็นสมาชิกทันทีเมื่อเข้าสู่ระบบครั้งแรก (Google หรืออีเมล)
+
+   ```sql
+   insert into public.team_invites(email, display_name) values
+     ('staff1@gmail.com', 'ชื่อเจ้าหน้าที่ 1'),
+     ('staff2@mahidol.ac.th', 'ชื่อเจ้าหน้าที่ 2');   -- อีเมลตัวพิมพ์เล็กเท่านั้น
+   ```
+
+   ถ้าเจ้าหน้าที่เข้าสู่ระบบไปก่อนแล้ว (ขึ้น "ยังไม่ได้รับสิทธิ์") ให้เพิ่มตรงด้วย:
 
    ```sql
    insert into public.team_members(user_id, display_name)
-   select id, 'ชื่อเจ้าหน้าที่' from auth.users where email = 'staff@example.com';
+   select id, 'ชื่อเจ้าหน้าที่' from auth.users where lower(email) = 'staff@example.com';
    ```
+
+   ถอดสิทธิ์: `delete from public.team_members where user_id = (select id from auth.users where lower(email) = 'staff@example.com');`
+   และลบคำเชิญ `delete from public.team_invites where email = 'staff@example.com';`
 
 5. Project Settings > API: คัดลอก **Project URL** และ **anon / publishable key** ใส่ใน `config.js`
    (anon key เปิดเผยได้เพราะสิทธิ์ถูกคุมด้วย RLS) **ห้ามใส่ service_role / secret key รหัสผ่าน หรือข้อมูลผู้ป่วยใน repository**

@@ -53,4 +53,22 @@ insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) v
 create policy docs_upload on storage.objects for insert to authenticated with check(bucket_id='documents' and public.is_team_member() and (storage.foldername(name))[1]=auth.uid()::text);
 -- Team members can read files attached to a record; owners can also see their own folder (needed to clean up failed/replaced uploads).
 create policy docs_read on storage.objects for select to authenticated using(bucket_id='documents' and public.is_team_member() and ((storage.foldername(name))[1]=auth.uid()::text or exists(select 1 from public.work_records r where r.file_path=objects.name)));
+-- Pre-approve staff by email: they become team members automatically on first sign-in (Google or email).
+-- Admin-only table (RLS on, no policies): manage it from the SQL Editor.
+create table if not exists public.team_invites(email text primary key check(email = lower(email)), display_name text not null, created_at timestamptz not null default now());
+alter table public.team_invites enable row level security;
+revoke all on public.team_invites from anon, authenticated;
+create or replace function public.accept_team_invite() returns trigger language plpgsql security definer set search_path=public as $$
+begin
+ insert into public.team_members(user_id, display_name)
+  select NEW.id, i.display_name from public.team_invites i where i.email = lower(NEW.email)
+  on conflict (user_id) do nothing;
+ return NEW;
+exception when others then
+ return NEW; -- never block sign-in because of an invite problem
+end $$;
+revoke execute on function public.accept_team_invite() from public, anon, authenticated;
+drop trigger if exists on_auth_user_created_accept_invite on auth.users;
+create trigger on_auth_user_created_accept_invite after insert on auth.users for each row execute function public.accept_team_invite();
+
 create policy docs_cleanup on storage.objects for delete to authenticated using(bucket_id='documents' and public.is_team_member() and (storage.foldername(name))[1]=auth.uid()::text);
